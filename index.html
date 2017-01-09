@@ -29,7 +29,7 @@
             text-align: center;
         }
 
-        .toggle {
+        .toggle, #showall {
             cursor: pointer;
             color: blue;
             font-size: 14px;
@@ -40,11 +40,6 @@
     <script>
 
         $(document).ready(function () {
-            renderTable();
-        });
-
-        function renderTable() {
-            $('#movies').empty();
             var jsonStr = "{\"Movies\" : " +
                     "[{\"Title\":\"Die Hard\",\"Year\":\"1988\",\"Rated\":\"R\",\"Released\":\"20 Jul 1988\",\"Runtime\":\"131 min\",\"Genre\":\"Action, Thriller\",\"Director\":\"John McTiernan\",\"Writer\":\"Roderick Thorp (novel), Jeb Stuart (screenplay), Steven E. de Souza (screenplay)\",\"Actors\":\"Bruce Willis, Bonnie Bedelia, Reginald VelJohnson, Paul Gleason\",\"Plot\":\"John McClane, officer of the NYPD, tries to save wife Holly Gennaro and several others, taken hostage by German terrorist Hans Gruber during a Christmas party at the Nakatomi Plaza in Los Angeles.\",\"Language\":\"English, German, Italian\",\"Country\":\"USA\",\"Awards\":\"Nominated for 4 Oscars. Another 6 wins & 2 nominations.\",\"Poster\":\"http:\/\/ia.media-imdb.com\/images\/M\/MV5BMTY4ODM0OTc2M15BMl5BanBnXkFtZTcwNzE0MTk3OA@@._V1_SX300.jpg\",\"Metascore\":\"70\",\"imdbRating\":\"8.3\",\"imdbVotes\":\"511278\",\"imdbID\":\"tt0095016\",\"Type\":\"movie\",\"Response\":\"True\"}," +
                     "{\"Title\":\"Avatar\",\"Year\":\"2009\",\"Rated\":\"PG-13\",\"Released\":\"18 Dec 2009\",\"Runtime\":\"162 min\",\"Genre\":\"Action, Adventure, Fantasy\",\"Director\":\"James Cameron\",\"Writer\":\"James Cameron\",\"Actors\":\"Sam Worthington, Zoe Saldana, Sigourney Weaver, Stephen Lang\",\"Plot\":\"A Paraplegic Marine dispatched to the moon Pandora on a unique mission becomes torn between following his orders and protecting the world he feels is his home..\",\"Language\":\"English, Spanish\",\"Country\":\"USA, UK\",\"Awards\":\"Won 3 Oscars. Another 78 wins & 102 nominations.\",\"Poster\":\"http:\/\/ia.media-imdb.com\/images\/M\/MV5BMTYwOTEwNjAzMl5BMl5BanBnXkFtZTcwODc5MTUwMw@@._V1_SX300.jpg\",\"Metascore\":\"83\",\"imdbRating\":\"7.9\",\"imdbVotes\":\"775719\",\"imdbID\":\"tt0499549\",\"Type\":\"movie\",\"Response\":\"True\"}," +
@@ -70,53 +65,121 @@
                     "{\"Title\":\"Interstellar\",\"Year\":\"2014\",\"Rated\":\"PG-13\",\"Released\":\"7 Nov 2014\",\"Runtime\":\"169 min\",\"Genre\":\"Adventure, Sci-Fi\",\"Director\":\"Christopher Nolan\",\"Writer\":\"Jonathan Nolan, Christopher Nolan\",\"Actors\":\"Ellen Burstyn, Matthew McConaughey, Mackenzie Foy, John Lithgow\",\"Plot\":\"A team of explorers travel through a wormhole in an attempt to ensure humanity's survival.\",\"Language\":\"English\",\"Country\":\"USA, UK, Canada\",\"Awards\":\"Won 1 Oscar. Another 32 wins & 93 nominations.\",\"Poster\":\"http:\/\/ia.media-imdb.com\/images\/M\/MV5BMjIxNTU4MzY4MF5BMl5BanBnXkFtZTgwMzM4ODI3MjE@._V1_SX300.jpg\",\"Metascore\":\"74\",\"imdbRating\":\"8.7\",\"imdbVotes\":\"573918\",\"imdbID\":\"tt0816692\",\"Type\":\"movie\",\"Response\":\"True\"}]}";
 
             var jsonObj = JSON.parse(jsonStr);
+            renderTable(jsonObj.Movies);
+            filterTable(jsonObj);
+            showAll(jsonObj.Movies);
+        });
+
+        function showAll(jsonMovies) {
+            $('#showall').click(function () {
+                renderTable(jsonMovies);
+            });
+        }
+
+        function filterTable(jsonObj) {
+            var searchedTerm;
+            $('#search').keypress(function (e) {
+                if (e.which == 13) {
+                    searchedTerm = $(this).val().trim();
 
 
+                    var movieArray = new Array();
+                    jsonObj.Movies.filter(function (row) {
+                        var smalCase = row.Country.toLowerCase()
+                        var countries = smalCase.split(', ');
+                        if (countries.indexOf(searchedTerm.toLowerCase()) != -1) {
+                            movieArray.push(row);
+                        } else {
+                            return false;
+                        }
+                    });
 
-            var filteredJson = jsonObj.Movies.filter(function (row) {
-                if(row.Country == "USA") {
-                    alert(row);
-                } else {
-                    alert("false");
+                    var genreArray = new Array();
+                    jsonObj.Movies.filter(function (row) {
+                        var smalCase = row.Genre.toLowerCase()
+                        var genres = smalCase.split(', ');
+                        if (genres.indexOf(searchedTerm.toLocaleLowerCase()) != -1) {
+                            movieArray.push(row);
+                        } else {
+                            return false;
+                        }
+                    });
+
+                    var writerArray = new Array();
+                    jsonObj.Movies.filter(function (row) {
+                        var smalCase = row.Writer.toLowerCase()
+                        var writers = smalCase.split(/[ ,]+/).join(',').split(',');
+                        var searchedTermArray = searchedTerm.split(' ');
+
+                        for(i in searchedTermArray) {
+                            //$('#test').append('<p>' + JSON.stringify(searchedTermArray));
+
+                            if (writers.indexOf(searchedTermArray[i].toLocaleLowerCase()) != -1) {
+                                writerArray.push(row);
+                            } else {
+                                return false;
+                            }
+                            break;
+                        }
+
+                    });
+                    if(movieArray.length > 0 )
+                        renderTable(movieArray);
+                    else if(genreArray.length > 0 )
+                        renderTable(genreArray);
+                    else if(writerArray.length > 0)
+                        renderTable(writerArray)
+
+                    return false;
                 }
             });
 
+
+        }
+
+        function renderTable(movieList) {
+            $('#movies').empty();
 
             $('#movies').append('<tr>' +
                     '<th> </th>' +
                     '<th>IMDB ID</th>' +
                     '<th>Title</th>' +
+                    '<th>Writer</th>' +
                     '<th>Genre</th>' +
                     '<th>Country</th>' +
                     '<th>Year</th>' +
                     '<th>IMDB Rating</th>' +
                     '</tr>>');
-            for (i in jsonObj.Movies) {
-                var id = jsonObj.Movies[i].imdbID;
+            for (i in movieList) {
+                var id = movieList[i].imdbID;
                 $('#movies').append('<tr id="' + id + '">');
                 $('#' + id).append('<td class="toggle" id="x' + id + '">' + '+');
-                $('#' + id).append('<td>' + jsonObj.Movies[i].imdbID);
-                $('#' + id).append('<td>' + jsonObj.Movies[i].Title);
-                $('#' + id).append('<td>' + jsonObj.Movies[i].Genre);
-                $('#' + id).append('<td>' + jsonObj.Movies[i].Country);
-                $('#' + id).append('<td>' + jsonObj.Movies[i].Year);
-                $('#' + id).append('<td>' + jsonObj.Movies[i].imdbRating);
-                $('#' + id).after('<tr class="extrainfohide" id="tr' + id + '">' + '<td colspan="7" id="td' + id + '">');
-                $('#td' + id).append('<p>IMDB Rating: ' + jsonObj.Movies[i].imdbRating);
-                $('#td' + id).append('<p>Rated: ' + jsonObj.Movies[i].Rated);
-                $('#td' + id).append('<p>Released: ' + jsonObj.Movies[i].Released);
-                $('#td' + id).append('<p>Runtime: ' + jsonObj.Movies[i].Runtime);
-                $('#td' + id).append('<p>Director: ' + jsonObj.Movies[i].Director);
-                $('#td' + id).append('<p>Writer: ' + jsonObj.Movies[i].Writer);
-                $('#td' + id).append('<p>Actors: ' + jsonObj.Movies[i].Actors);
-                $('#td' + id).append('<p>Plot: ' + jsonObj.Movies[i].Plot);
-                $('#td' + id).append('<p>Language: ' + jsonObj.Movies[i].Language);
-                $('#td' + id).append('<p>Awards: ' + jsonObj.Movies[i].Awards);
-                $('#td' + id).append('<p>Poster: ' + '<a href="' + jsonObj.Movies[i].Poster + '">URL</a>');
-                $('#td' + id).append('<p>Metascore: ' + jsonObj.Movies[i].Metascore);
-                $('#td' + id).append('<p>IMDB Votes: ' + jsonObj.Movies[i].imdbVotes);
-                $('#td' + id).append('<p>Type: ' + jsonObj.Movies[i].Type);
-                $('#td' + id).append('<p>Response: ' + jsonObj.Movies[i].Response);
+                $('#' + id).append('<td>' + movieList[i].imdbID);
+                $('#' + id).append('<td>' + movieList[i].Title);
+                $('#' + id).append('<td>' + movieList[i].Writer);
+                $('#' + id).append('<td>' + movieList[i].Genre);
+                $('#' + id).append('<td>' + movieList[i].Country);
+                $('#' + id).append('<td>' + movieList[i].Year);
+                $('#' + id).append('<td>' + movieList[i].imdbRating);
+                $('#' + id).after('<tr class="extrainfohide" id="tr' + id + '">' + '<td colspan="8" id="td' + id + '">');
+                $('#td' + id).append('<p>IMDB Rating: ' + movieList[i].imdbRating);
+                $('#td' + id).append('<p>Rated: ' + movieList[i].Rated);
+                $('#td' + id).append('<p>Released: ' + movieList[i].Released);
+                $('#td' + id).append('<p>Runtime: ' + movieList[i].Runtime);
+                $('#td' + id).append('<p>Director: ' + movieList[i].Director);
+                $('#td' + id).append('<p>Actors: ' + movieList[i].Actors);
+                $('#td' + id).append('<p>Plot: ' + movieList[i].Plot);
+                $('#td' + id).append('<p>Language: ' + movieList[i].Language);
+                $('#td' + id).append('<p>Awards: ' + movieList[i].Awards);
+                $('#td' + id).append('<p>Poster: ' + '<a href="' + movieList[i].Poster + '">URL</a>');
+                $('#td' + id).append('<p>Metascore: ' + movieList[i].Metascore);
+                $('#td' + id).append('<p>IMDB Votes: ' + movieList[i].imdbVotes);
+                $('#td' + id).append('<p>Type: ' + movieList[i].Type);
+                $('#td' + id).append('<p>Response: ' + movieList[i].Response);
+            }
+
+            function renderRows() {
+
             }
 
             $('.toggle').click(
@@ -124,34 +187,15 @@
                         $(this).parent().next().toggleClass('extrainfohide');
                         $(this).html($(this).text() == "+" ? "-" : "+");
                     });
-
-
-
-            $('#search').keypress(function (e) {
-                if (e.which == 13) {
-
-                    return false;    //<---- Add this line
-                }
-            });
-/*
-            var $rows = $('#table tr');
-            $('#search').keyup(function() {
-                var val = $.trim($(this).val()).replace(/ +/g, ' ').toLowerCase();
-
-                $rows.show().filter(function() {
-                    var text = $(this).text().replace(/\s+/g, ' ').toLowerCase();
-                    return !~text.indexOf(val);
-                }).hide();
-            });
-            */
         }
 
     </script>
 </head>
 <body>
 
+<div id="showall">Showall</div>
 <p>
-Search by country, writer or genre: <input id="search" type="text" name="search">
+    Search by country, writer or genre: <input id="search" type="text" name="search">
 </p>
 <table id="movies"></table>
 
